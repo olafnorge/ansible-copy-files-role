@@ -1,0 +1,40 @@
+---
+- name: Tasks to copy files
+  block:
+    - name: Ensure folders exist on remote
+      file:
+        path: "{{ item.dest | dirname }}"
+        state: directory
+        mode: 0755
+      loop: "{{ copy_files.copy }}"
+    - name: Copy files to remote
+      copy:
+        dest: "{{ item.dest }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0644') }}"
+        owner: "{{ item.owner | default('root') }}"
+        src: "{{ item.src }}"
+      loop: "{{ copy_files.copy }}"
+  when:
+    - copy_files.copy is defined
+    - copy_files.copy | length > 0
+
+- name: Tasks to template files
+  block:
+    - name: Ensure folders exist on remote
+      file:
+        path: "{{ item.dest | dirname }}"
+        state: directory
+        mode: 0755
+      loop: "{{ copy_files.copy }}"
+    - name: Copy files to remote
+      template:
+        dest: "{{ item.dest }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0644') }}"
+        owner: "{{ item.owner | default('root') }}"
+        src: "{{ item.src }}"
+      loop: "{{ copy_files.template }}"
+  when:
+    - copy_files.template is defined
+    - copy_files.template | length > 0
