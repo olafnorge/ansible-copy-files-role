@@ -1,12 +1,19 @@
 ---
 - name: Tasks to copy files
   block:
+    - name: Determine if folders exist on remote
+      stat:
+        path: "{{ item.dest | dirname }}"
+      register: copy_files_copy_directories
+      loop: "{{ copy_files['copy'] | list }}"
     - name: Ensure folders exist on remote
       file:
-        path: "{{ item.dest | dirname }}"
+        path: "{{ item.1.dest | dirname }}"
         state: directory
         mode: 0755
-      loop: "{{ copy_files.copy }}"
+      when:
+        - not item.0.stat.exists
+      loop: "{{ copy_files_copy_directories['results'] | list | zip(copy_files['copy'] | list) | list }}"
     - name: Copy files to remote
       copy:
         dest: "{{ item.dest }}"
@@ -14,19 +21,26 @@
         mode: "{{ item.mode | default('0644') }}"
         owner: "{{ item.owner | default('root') }}"
         src: "{{ item.src }}"
-      loop: "{{ copy_files.copy }}"
+      loop: "{{ copy_files['copy'] | list }}"
   when:
-    - copy_files.copy is defined
-    - copy_files.copy | length > 0
+    - copy_files['copy'] is defined
+    - copy_files['copy'] | length > 0
 
 - name: Tasks to template files
   block:
+    - name: Determine if folders exist on remote
+      stat:
+        path: "{{ item.dest | dirname }}"
+      register: copy_files_template_directories
+      loop: "{{ copy_files['template'] | list }}"
     - name: Ensure folders exist on remote
       file:
-        path: "{{ item.dest | dirname }}"
+        path: "{{ item.1.dest | dirname }}"
         state: directory
         mode: 0755
-      loop: "{{ copy_files.copy }}"
+      when:
+        - not item.0.stat.exists
+      loop: "{{ copy_files_template_directories['results'] | list | zip(copy_files['template'] | list) | list }}"
     - name: Copy files to remote
       template:
         dest: "{{ item.dest }}"
@@ -34,7 +48,7 @@
         mode: "{{ item.mode | default('0644') }}"
         owner: "{{ item.owner | default('root') }}"
         src: "{{ item.src }}"
-      loop: "{{ copy_files.template }}"
+      loop: "{{ copy_files['template'] | list }}"
   when:
-    - copy_files.template is defined
-    - copy_files.template | length > 0
+    - copy_files['template'] is defined
+    - copy_files['template'] | length > 0
